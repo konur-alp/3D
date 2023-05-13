@@ -1,0 +1,325 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
+using Microsoft.Xna.Framework.Content;
+using Microsoft.Xna.Framework.GamerServices;
+using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Media;
+using Microsoft.Xna.Framework.Net;
+using Microsoft.Xna.Framework.Storage;
+
+namespace _3D
+{
+    public class Game1 : Microsoft.Xna.Framework.Game
+    {
+        GraphicsDeviceManager graphics;
+        SpriteBatch spriteBatch;
+        Texture2D texture;
+        //Game1 s = new Game1();
+
+        int C = 0;
+        int ziplama = 0;
+        int yukseklik = 0;
+        int[] carpisma = new int[2];
+        Vector2 oncekifare = new Vector2();
+        int uzaklik = 1;
+        Vector2 koordinat = new Vector2(200, 200);
+        float yon = 0f;
+        int[,] map = {{13, 13, 13, 13, 13, 13, 13, 16, 00, 00, 00, 00, 00, 17, 17, 17, 17, 00, 00, 00, 00, 13, 13, 13, 13, 13, 13, 13, 13, 13},
+                      {13, 00, 00, 00, 00, 00, 00, 16, 00, 00, 00, 00, 00, 17, 00, 00, 18, 00, 00, 00, 00, 13, 00, 00, 00, 00, 08, 00, 00, 14},
+                      {13, 00, 12, 00, 04, 01, 00, 16, 17, 17, 17, 17, 17, 17, 00, 00, 18, 17, 17, 17, 17, 13, 00, 10, 12, 00, 08, 00, 04, 14},
+                      {13, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 01, 14},
+                      {13, 00, 00, 00, 00, 06, 00, 16, 17, 17, 17, 00, 19, 17, 17, 17, 17, 00, 19, 17, 00, 16, 00, 02, 01, 00, 10, 00, 00, 14},
+                      {13, 17, 00, 10, 00, 06, 00, 16, 17, 17, 17, 00, 18, 00, 12, 00, 18, 00, 19, 17, 00, 14, 13, 13, 13, 13, 13, 13, 13, 14},
+                      {13, 17, 00, 00, 00, 00, 00, 16, 03, 00, 00, 00, 00, 00, 00, 00, 18, 17, 17, 17, 00, 00, 00, 00, 00, 00, 00, 00, 00, 18},
+                      {13, 13, 13, 13, 13, 13, 13, 16, 17, 17, 17, 17, 17, 18, 17, 17, 17, 00, 00, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17}};
+        Color[,] tile = new Color[48, 48];
+
+        struct Character
+        {
+            public int X;
+            public int Y;
+            public int Width;
+            public int Height;
+            public int Texture;
+            public int Behaviour; //0. N�tr, 1. G�rev, 2. D��man, 3. Sat�c�
+            public int Animation;
+        }
+        Character[] character = new Character[1];
+
+        public Game1()
+        {
+            graphics = new GraphicsDeviceManager(this);
+            Content.RootDirectory = "Content";
+        }
+
+        public void SetTile(int type)
+        {
+            texture = Content.Load<Texture2D>("2");// (type.ToString());
+            Color[] arkaplanrar = new Color[2304];
+            texture.GetData<Color>(0, new Rectangle(0, 0, 48, 48), arkaplanrar, 0, 2304);
+            for (int i = 0; i < 2304; i++)
+                tile[i / 48, i % 48] = arkaplanrar[i];
+        }
+
+        protected override void Initialize()
+        {
+            graphics.PreferredBackBufferWidth = 640;
+            graphics.PreferredBackBufferHeight = 480;
+            graphics.IsFullScreen = true;
+            graphics.ApplyChanges();
+            base.Initialize();
+        }
+
+        protected override void LoadContent()
+        {
+            spriteBatch = new SpriteBatch(GraphicsDevice);
+            texture = Content.Load<Texture2D>("texture");
+            MouseState fare = Mouse.GetState();
+            oncekifare.X = fare.X;
+            oncekifare.Y = fare.Y;
+
+            character[0].X = 60;
+            character[0].Y = 100;
+            character[0].Height = 32;
+            character[0].Width = 11;
+            character[0].Texture = 0;
+            character[0].Behaviour = 0;
+            character[0].Animation = 0;
+        }
+
+        protected override void UnloadContent()
+        {
+        }
+
+        protected override void Update(GameTime gameTime)
+        {
+            KeyboardState klavye = Keyboard.GetState();
+            MouseState fare = Mouse.GetState();
+            if (fare.X != oncekifare.X)
+            {
+                yon += (fare.X - oncekifare.X) / 100;
+            }
+            if (fare.Y != oncekifare.Y)
+            {
+                yukseklik += (int)(fare.Y - oncekifare.Y) * 2;
+                if (yukseklik > 450)
+                    yukseklik = 450;
+                else if (yukseklik < -350)
+                    yukseklik = -350;
+            }
+            oncekifare.X = 400;
+            oncekifare.Y = 300;
+            Mouse.SetPosition(400, 300);
+            C++;
+            if (C >= 14)
+                C = 0;
+            if (klavye.IsKeyDown(Keys.Space) && ziplama == 0)
+                ziplama = 30;
+            if (C % 2 == 0)
+            {
+                if (ziplama == 30)
+                    ziplama = 60;
+                else if (ziplama == 60)
+                    ziplama = 85;
+                else if (ziplama == 85)
+                    ziplama = 105;
+                else if (ziplama == 105)
+                    ziplama = 120;
+                else if (ziplama == 120)
+                    ziplama = 130;
+                else if (ziplama == 130)
+                    ziplama = 135;
+                else if (ziplama == 135)
+                    ziplama = 137;
+                else if (ziplama == 137)
+                    ziplama = 139;
+                else if (ziplama == 139)
+                    ziplama = 138;
+                else if (ziplama == 138)
+                    ziplama = 136;
+                else if (ziplama == 136)
+                    ziplama = 131;
+                else if (ziplama == 131)
+                    ziplama = 121;
+                else if (ziplama == 121)
+                    ziplama = 106;
+                else if (ziplama == 106)
+                    ziplama = 86;
+                else if (ziplama == 86)
+                    ziplama = 61;
+                else if (ziplama == 61)
+                    ziplama = 31;
+                else if (ziplama == 31)
+                    ziplama = 0;
+            }
+            if (klavye.IsKeyDown(Keys.Up) || klavye.IsKeyDown(Keys.W))
+            {
+                koordinat.X += (float)(Math.Cos(yon));
+                koordinat.Y += (float)(Math.Sin(yon));
+            }
+            else if (klavye.IsKeyDown(Keys.Down) || klavye.IsKeyDown(Keys.S))
+            {
+                koordinat.X -= (float)(Math.Cos(yon));
+                koordinat.Y -= (float)(Math.Sin(yon));
+            }
+            if (klavye.IsKeyDown(Keys.Right) || klavye.IsKeyDown(Keys.D))
+            {
+                koordinat.X += (float)(Math.Cos(yon + (Math.PI / 2)));
+                koordinat.Y += (float)(Math.Sin(yon + (Math.PI / 2)));
+            }
+            else if (klavye.IsKeyDown(Keys.Left) || klavye.IsKeyDown(Keys.A))
+            {
+                koordinat.X -= (float)(Math.Cos(yon + (Math.PI / 2)));
+                koordinat.Y -= (float)(Math.Sin(yon + (Math.PI / 2)));
+            }
+            if (map[(int)(koordinat.Y) / 48, (int)(koordinat.X) / 48] > 0)
+                carpisma = new int[]{(int)(koordinat.Y) / 48, (int)(koordinat.X) / 48};
+            while (carpisma[0] == (int)(koordinat.Y) / 48 && carpisma[1] == (int)(koordinat.X) / 48)
+            {
+                if (koordinat.X % 48 < 5)
+                    koordinat.X--;
+                else if (koordinat.X % 48 > 44)
+                    koordinat.X++;
+                if (koordinat.Y % 48 < 5)
+                    koordinat.Y--;
+                else if (koordinat.Y % 48 > 44)
+                    koordinat.Y++;
+            }
+            base.Update(gameTime);
+        }
+
+        protected override void Draw(GameTime gameTime)
+        {
+            GraphicsDevice.Clear(Color.LightBlue);
+            spriteBatch.Begin();
+            
+            //ARKAPLAN
+            texture = Content.Load<Texture2D>("back"); //Yar�m
+            spriteBatch.Draw(texture, new Rectangle(-(int)((yon % (2 * Math.PI)) * 570), 10 + yukseklik + (ziplama * 30 / 5001), 2 * 1791, 280), Color.White);
+            spriteBatch.Draw(texture, new Rectangle((2 * 1791) - (int)((yon % (2 * Math.PI)) * 570), 10 + yukseklik + (ziplama * 30 / 5001), 2 * 1791, 280), Color.White);
+            spriteBatch.Draw(texture, new Rectangle(-(2 * 1791) - (int)((yon % (2 * Math.PI)) * 570), 10 + yukseklik + (ziplama * 30 / 5001), 2 * 1791, 280), Color.White);
+            //spriteBatch.Draw(texture, new Rectangle(-(int)((yon % (2 * Math.PI)) * 1000), ziplama + yukseklik + 40 - (int)(4800 / 500) + (int)(9600 / 500), 6180, 200), Color.White);
+            //spriteBatch.Draw(texture, new Rectangle(640 -(int)((yon % (2 * Math.PI)) * 1000), ziplama + yukseklik + 40 - (int)(4800 / 500) + (int)(9600 / 500), 6180, 200), Color.White);
+            
+            //3D D�NYA
+            texture = Content.Load<Texture2D>("texture");
+            for (float i = -32f; i < 32f; i += 0.1f)
+            {
+                bas:
+                koordinat.X += (float)(uzaklik * Math.Cos(yon + i * (Math.PI / 180)));
+                koordinat.Y += (float)(uzaklik * Math.Sin(yon + i * (Math.PI / 180)));
+                if (uzaklik * Math.Cos(i * Math.PI / 180) > 500) //Buraya gene bak
+                {
+                    koordinat.X -= (float)(uzaklik * Math.Cos(yon + i * (Math.PI / 180)));
+                    koordinat.Y -= (float)(uzaklik * Math.Sin(yon + i * (Math.PI / 180)));
+                    for (int u = 500; u > 245; u--)
+                        spriteBatch.Draw(texture, new Rectangle((int)((i + 32) * 10), (ziplama * 30 / (int)(1 + uzaklik * Math.Cos((float)i * Math.PI / 180)) + yukseklik + 240 - (int)(4800 / (u * Math.Cos(i * Math.PI / 180))) + (int)(9600 / (u * Math.Cos(i * Math.PI / 180)))), 1, 4800), new Rectangle(0, 0, 10, 30), new Color(82, 21, 21, (byte)(1500 - (3 * u))));
+                    spriteBatch.Draw(texture, new Rectangle((int)((i + 32) * 10), (ziplama * 30 / (int)(1 + uzaklik * Math.Cos((float)i * Math.PI / 180))) + yukseklik + 240 - (int)(4800 / (245 * Math.Cos(i * Math.PI / 180))) + (int)(9600 / (245 * Math.Cos(i * Math.PI / 180))), 1, 4800), new Rectangle(0, 0, 10, 480), new Color(82, 21, 21));
+                    uzaklik = 1;
+                }
+                else if (((int)(koordinat.X % 48) == 0 || (int)(koordinat.X % 48) == 47 || (int)(koordinat.Y % 48) == 0 || (int)(koordinat.Y % 48) == 47) && map[(int)(koordinat.Y) / 48, (int)(koordinat.X) / 48] > 0)
+                {
+                    //if ((koordinat.X % 50 < 2 || koordinat.X % 50 > 47) && (koordinat.Y % 50 < 2 || koordinat.Y % 50 > 47))
+                    //{
+                    //    if (koordinat.X % 50 < 2 && map[(int)(koordinat.Y) / 50, (int)(koordinat.X) / 50] > 0 && map[(int)(koordinat.Y) / 50, ((int)(koordinat.X) / 50) - 1] > 0)
+                    //        spriteBatch.Draw(texture, new Rectangle((i + 32) * 10, ziplama + yukseklik + 240 - (int)(4800 / (uzaklik * Math.Cos(i * Math.PI / 180))), 10, (int)(9600 / (uzaklik * Math.Cos(i * Math.PI / 180)))), new Rectangle((map[(int)(koordinat.Y) / 50, (int)(koordinat.X) / 50] - 1) * 10, 0, 10, 480), Color.White);
+                    //    else if (koordinat.X % 50 > 47 && map[(int)(koordinat.Y) / 50, (int)(koordinat.X) / 50] > 0 && map[(int)(koordinat.Y) / 50, ((int)(koordinat.X) / 50) + 1] > 0)
+                    //        spriteBatch.Draw(texture, new Rectangle((i + 32) * 10, ziplama + yukseklik + 240 - (int)(4800 / (uzaklik * Math.Cos(i * Math.PI / 180))), 10, (int)(9600 / (uzaklik * Math.Cos(i * Math.PI / 180)))), new Rectangle((map[(int)(koordinat.Y) / 50, (int)(koordinat.X) / 50] - 1) * 10, 0, 10, 480), Color.White);
+                    //    else
+                    //        spriteBatch.Draw(texture, new Rectangle((i + 32) * 10, ziplama + yukseklik + 240 - (int)(4800 / (uzaklik * Math.Cos(i * Math.PI / 180))), 10, (int)(9600 / (uzaklik * Math.Cos(i * Math.PI / 180)))), new Rectangle((map[(int)(koordinat.Y) / 50, (int)(koordinat.X) / 50] - 1) * 10, 0, 10, 480), Color.LightGray);
+                    //}
+                    //else
+                    //{
+                    int arttir;
+                    int alpha;
+                    if ((int)(koordinat.X % 48) == 0 || (int)(koordinat.X % 48) == 47)
+                    {
+                        //spriteBatch.Draw(texture, new Rectangle((int)((i + 32) * 10), ziplama + yukseklik + 240 - (int)(4800 / (uzaklik * Math.Cos((float)i * Math.PI / 180))), 1, (int)(9600 / (uzaklik * Math.Cos(i * Math.PI / 180)))), new Rectangle((map[(int)(koordinat.Y) / 48, (int)(koordinat.X) / 48] - 1) * 10, 0, 10, 480), Color.White);
+                        texture = Content.Load<Texture2D>((((map[(int)(koordinat.Y) / 48, (int)(koordinat.X) / 48] - 1) / 4) + 1).ToString());
+                        if ((int)(koordinat.X % 48) == 0 && map[(int)(koordinat.Y) / 48, (int)(koordinat.X) / 48] % 4 == 1)
+                            arttir = 0;
+                        else if ((int)(koordinat.X % 48) == 47 && map[(int)(koordinat.Y) / 48, (int)(koordinat.X) / 48] % 4 == 3)
+                            arttir = 0;
+                        else
+                            arttir = 48;
+                        if (uzaklik < 415)
+                            alpha = 255;
+                        else
+                            alpha = 1500 - uzaklik * 3;
+                        Color[] arkaplanrar = new Color[2304];
+                        texture.GetData<Color>(0, new Rectangle(arttir, 0, 48, 48), arkaplanrar, 0, 2304);
+                        texture = Content.Load<Texture2D>("texture");
+                        for (int ii = 0; ii < 2304; ii++)
+                            tile[ii / 48, ii % 48] = arkaplanrar[ii];
+                        for (int y = 0; y < 48; y++)
+                        {
+                            if ((int)(koordinat.X % 48) == 47 && map[(int)(koordinat.Y) / 48, (int)(koordinat.X) / 48] < 17)
+                                spriteBatch.Draw(texture, new Rectangle((int)((i + 32) * 10), (ziplama * 30 / (int)(1 + uzaklik * Math.Cos((float)i * Math.PI / 180))) + yukseklik + 240 + (int)(4800 * y / (24 * uzaklik * Math.Cos((float)i * Math.PI / 180))) - (int)(4800 / (uzaklik * Math.Cos((float)i * Math.PI / 180))), 1, 1 + (int)(9600 / (48 * uzaklik * Math.Cos(i * Math.PI / 180)))), new Rectangle(0, 0, 1, 1), new Color(tile[y, 47 - ((int)((koordinat.Y / 1) % 48))].R, tile[y, 47 - ((int)((koordinat.Y / 1) % 48))].G, tile[y, 47 - ((int)((koordinat.Y / 1) % 48))].B, (byte)alpha));
+                            else
+                                spriteBatch.Draw(texture, new Rectangle((int)((i + 32) * 10), (ziplama * 30 / (int)(1 + uzaklik * Math.Cos((float)i * Math.PI / 180))) + yukseklik + 240 + (int)(4800 * y / (24 * uzaklik * Math.Cos((float)i * Math.PI / 180))) - (int)(4800 / (uzaklik * Math.Cos((float)i * Math.PI / 180))), 1, 1 + (int)(9600 / (48 * uzaklik * Math.Cos(i * Math.PI / 180)))), new Rectangle(0, 0, 1, 1), new Color(tile[y, (int)((koordinat.Y / 1) % 48)].R, tile[y, (int)((koordinat.Y / 1) % 48)].G, tile[y, (int)((koordinat.Y / 1) % 48)].B, (byte)alpha));
+                        }
+                    }
+                    else
+                    {
+                        //spriteBatch.Draw(texture, new Rectangle((int)((i + 32) * 10), ziplama + yukseklik + 240 - (int)(4800 / (uzaklik * Math.Cos((float)i * Math.PI / 180))), 1, (int)(9600 / (uzaklik * Math.Cos(i * Math.PI / 180)))), new Rectangle((map[(int)(koordinat.Y) / 48, (int)(koordinat.X) / 48] - 1) * 10, 0, 10, 480), Color.LightGray);
+                        texture = Content.Load<Texture2D>((((map[(int)(koordinat.Y) / 48, (int)(koordinat.X) / 48] - 1) / 4) + 1).ToString());
+                        if ((int)(koordinat.Y % 48) == 0 && map[(int)(koordinat.Y) / 48, (int)(koordinat.X) / 48] % 4 == 2)
+                            arttir = 0;
+                        else if ((int)(koordinat.Y % 48) == 47 && map[(int)(koordinat.Y) / 48, (int)(koordinat.X) / 48] % 4 == 0)
+                            arttir = 0;
+                        else
+                            arttir = 48;
+                        if (uzaklik < 415)
+                            alpha = 255;
+                        else
+                            alpha = 1500 - uzaklik * 3;
+                        Color[] arkaplanrar = new Color[2304];
+                        texture.GetData<Color>(0, new Rectangle(arttir, 0, 48, 48), arkaplanrar, 0, 2304);
+                        texture = Content.Load<Texture2D>("texture");
+                        for (int ii = 0; ii < 2304; ii++)
+                            tile[ii / 48, ii % 48] = arkaplanrar[ii];
+                        for (int y = 0; y < 48; y++)
+                            if (map[(int)(koordinat.Y) / 48, (int)(koordinat.X) / 48] < 13)
+                            {
+                                if ((int)(koordinat.Y % 48) == 47)
+                                    spriteBatch.Draw(texture, new Rectangle((int)((i + 32) * 10), (ziplama * 30 / (int)(1 + uzaklik * Math.Cos((float)i * Math.PI / 180))) + yukseklik + 240 + (int)(4800 * y / (24 * uzaklik * Math.Cos((float)i * Math.PI / 180))) - (int)(4800 / (uzaklik * Math.Cos((float)i * Math.PI / 180))), 1, 1 + (int)(9600 / (48 * uzaklik * Math.Cos(i * Math.PI / 180)))), new Rectangle(0, 0, 1, 1), new Color((byte)(tile[y, (int)((koordinat.X / 1) % 48)].R * 0.8), (byte)(tile[y, (int)((koordinat.X / 1) % 48)].G * 0.8), (byte)(tile[y, (int)((koordinat.X / 1) % 48)].B * 0.8)));
+                                else
+                                    spriteBatch.Draw(texture, new Rectangle((int)((i + 32) * 10), (ziplama * 30 / (int)(1 + uzaklik * Math.Cos((float)i * Math.PI / 180))) + yukseklik + 240 + (int)(4800 * y / (24 * uzaklik * Math.Cos((float)i * Math.PI / 180))) - (int)(4800 / (uzaklik * Math.Cos((float)i * Math.PI / 180))), 1, 1 + (int)(9600 / (48 * uzaklik * Math.Cos(i * Math.PI / 180)))), new Rectangle(0, 0, 1, 1), new Color((byte)(tile[y, 47 - ((int)((koordinat.X / 1) % 48))].R * 0.8), (byte)(tile[y, 47 - ((int)((koordinat.X / 1) % 48))].G * 0.8), (byte)(tile[y, 47 - ((int)((koordinat.X / 1) % 48))].B * 0.8), (byte)alpha));
+                            }
+                            else
+                                spriteBatch.Draw(texture, new Rectangle((int)((i + 32) * 10), (ziplama * 30 / (int)(1 + uzaklik * Math.Cos((float)i * Math.PI / 180))) + yukseklik + 240 + (int)(4800 * y / (24 * uzaklik * Math.Cos((float)i * Math.PI / 180))) - (int)(4800 / (uzaklik * Math.Cos((float)i * Math.PI / 180))), 1, 1 + (int)(9600 / (48 * uzaklik * Math.Cos(i * Math.PI / 180)))), new Rectangle(0, 0, 1, 1), new Color(tile[y, (int)((koordinat.X / 1) % 48)].R, tile[y, (int)((koordinat.X / 1) % 48)].G, tile[y, (int)((koordinat.X / 1) % 48)].B, (byte)alpha));
+                    }
+                    //}
+                    spriteBatch.Draw(texture, new Rectangle((int)((i + 32) * 10), (ziplama * 30 / (int)(1 + uzaklik * Math.Cos((float)i * Math.PI / 180))) + yukseklik + 240 - (int)(4800 / (uzaklik * Math.Cos(i * Math.PI / 180))) + (int)(9600 / (uzaklik * Math.Cos(i * Math.PI / 180))), 1, 4800), new Rectangle(0, 0, 10, 480), new Color(82, 21, 21));
+                    koordinat.X -= (float)(uzaklik * Math.Cos(yon + i * (Math.PI / 180)));
+                    koordinat.Y -= (float)(uzaklik * Math.Sin(yon + i * (Math.PI / 180)));
+                    uzaklik = 1;
+                }
+                else
+                {
+                    koordinat.X -= (float)(uzaklik * Math.Cos(yon + i * (Math.PI / 180)));
+                    koordinat.Y -= (float)(uzaklik * Math.Sin(yon + i * (Math.PI / 180)));
+                    uzaklik++;
+                    goto bas;
+                }
+            }
+            
+            //KARAKTERLER
+            for (int i = 0; i < character.Length; i++)
+            {
+                texture = Content.Load<Texture2D>("k" + character[i].Texture);
+                float cyon = (float)Math.Asin((double)(character[0].Y - (int)koordinat.Y) / (double)(character[0].X - (int)koordinat.X)); //yar�m
+            }
+            
+            
+            texture = Content.Load<Texture2D>("aim");
+            spriteBatch.Draw(texture, new Rectangle(305, 215, 30, 30), new Rectangle(0, 0, 30, 30), new Color(255, 255, 255));
+            spriteBatch.End();
+            base.Draw(gameTime);
+        }
+    }
+}
